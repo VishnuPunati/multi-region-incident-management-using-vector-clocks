@@ -1,0 +1,131 @@
+services:
+  db-us:
+    image: postgres:13
+    container_name: db-us
+    environment:
+      POSTGRES_DB: ${DB_NAME_US:-incidents}
+      POSTGRES_USER: ${DB_USER_US:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD_US:-pass}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER_US:-user} -d ${DB_NAME_US:-incidents}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - us-db-data:/var/lib/postgresql/data
+
+  region-us:
+    build:
+      context: ./region-us
+    container_name: region-us
+    ports:
+      - "${REGION_US_PORT:-3001}:3000"
+    environment:
+      REGION: us
+      DB_HOST: db-us
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME_US:-incidents}
+      DB_USER: ${DB_USER_US:-user}
+      DB_PASSWORD: ${DB_PASSWORD_US:-pass}
+      REGION_US_URL: http://region-us:3000
+      REGION_EU_URL: http://region-eu:3000
+      REGION_APAC_URL: http://region-apac:3000
+      REPLICATION_INTERVAL_SECONDS: ${REPLICATION_INTERVAL_SECONDS:-2}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-2}
+    depends_on:
+      db-us:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3000/health', timeout=2)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  db-eu:
+    image: postgres:13
+    container_name: db-eu
+    environment:
+      POSTGRES_DB: ${DB_NAME_EU:-incidents}
+      POSTGRES_USER: ${DB_USER_EU:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD_EU:-pass}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER_EU:-user} -d ${DB_NAME_EU:-incidents}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - eu-db-data:/var/lib/postgresql/data
+
+  region-eu:
+    build:
+      context: ./region-eu
+    container_name: region-eu
+    ports:
+      - "${REGION_EU_PORT:-3002}:3000"
+    environment:
+      REGION: eu
+      DB_HOST: db-eu
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME_EU:-incidents}
+      DB_USER: ${DB_USER_EU:-user}
+      DB_PASSWORD: ${DB_PASSWORD_EU:-pass}
+      REGION_US_URL: http://region-us:3000
+      REGION_EU_URL: http://region-eu:3000
+      REGION_APAC_URL: http://region-apac:3000
+      REPLICATION_INTERVAL_SECONDS: ${REPLICATION_INTERVAL_SECONDS:-2}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-2}
+    depends_on:
+      db-eu:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3000/health', timeout=2)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  db-apac:
+    image: postgres:13
+    container_name: db-apac
+    environment:
+      POSTGRES_DB: ${DB_NAME_APAC:-incidents}
+      POSTGRES_USER: ${DB_USER_APAC:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD_APAC:-pass}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER_APAC:-user} -d ${DB_NAME_APAC:-incidents}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - apac-db-data:/var/lib/postgresql/data
+
+  region-apac:
+    build:
+      context: ./region-apac
+    container_name: region-apac
+    ports:
+      - "${REGION_APAC_PORT:-3003}:3000"
+    environment:
+      REGION: apac
+      DB_HOST: db-apac
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME_APAC:-incidents}
+      DB_USER: ${DB_USER_APAC:-user}
+      DB_PASSWORD: ${DB_PASSWORD_APAC:-pass}
+      REGION_US_URL: http://region-us:3000
+      REGION_EU_URL: http://region-eu:3000
+      REGION_APAC_URL: http://region-apac:3000
+      REPLICATION_INTERVAL_SECONDS: ${REPLICATION_INTERVAL_SECONDS:-2}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-2}
+    depends_on:
+      db-apac:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3000/health', timeout=2)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  us-db-data:
+  eu-db-data:
+  apac-db-data:
